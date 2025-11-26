@@ -3,7 +3,7 @@ import { Rect } from '../types';
 import { X, MessageSquarePlus, ImagePlus, Trash2 } from 'lucide-react';
 
 interface CanvasEditorProps {
-  imageSrc: string;
+  currentImage: string;
   rects: Rect[];
   onAddRect: (rect: Rect) => void;
   onRemoveRect: (id: string) => void;
@@ -13,8 +13,8 @@ interface CanvasEditorProps {
   isWatermarkMode: boolean;
 }
 
-export const CanvasEditor: React.FC<CanvasEditorProps> = ({ 
-  imageSrc, 
+export const CanvasEditor: React.FC<CanvasEditorProps> = ({
+  currentImage,
   rects, 
   onAddRect, 
   onRemoveRect, 
@@ -168,8 +168,8 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
-        <img 
-          src={imageSrc} 
+        <img
+          src={currentImage}
           alt="Page Content" 
           className="block max-h-[85vh] max-w-full h-auto w-auto object-contain select-none"
           draggable={false}

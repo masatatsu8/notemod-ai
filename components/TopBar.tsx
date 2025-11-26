@@ -52,7 +52,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             <FileTextIcon />
           </div>
           <div>
-            <h1 className="font-bold text-gray-900 text-lg leading-tight">NoteMod AI</h1>
+            <h1 className="font-bold text-gray-900 text-lg leading-tight">NoteMod AI <span className="text-xs font-normal text-gray-400">v0.0.1</span></h1>
             <p className="text-xs text-gray-500">{fileName || 'No file selected'}</p>
           </div>
           {isAuthenticationRequired() && (

@@ -642,7 +642,7 @@ const App: React.FC = () => {
                   onRemoveRect={removeRect}
                   onUpdateRectPrompt={updateRectPrompt}
                   onUpdateRectImage={updateRectImage}
-                  readOnly={!!activePage.selectedImageId}
+                  readOnly={false}
                   isWatermarkMode={isWatermarkMode}
                 />
               </div>
@@ -805,6 +805,11 @@ const App: React.FC = () => {
         isGenerating={isProcessing}
         totalPages={state.pages.length}
       />
+
+      {/* Footer */}
+      <footer className="fixed bottom-0 right-0 p-2 text-xs text-gray-400 z-50">
+        &copy; 2025 mastatsu8
+      </footer>
 
     </div>
   );

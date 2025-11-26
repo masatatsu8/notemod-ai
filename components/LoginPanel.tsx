@@ -80,6 +80,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({ onLogin, error }) => {
                     </button>
                 </form>
             </div>
+            <p className="mt-6 text-xs text-gray-400 text-center">&copy; 2025 mastatsu8. All rights reserved.</p>
         </div>
     );
 };
