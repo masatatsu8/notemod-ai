@@ -89,4 +89,4 @@ docker compose down
 
 ## ライセンス
 
-&copy; 2025 mastatsu8. All rights reserved.
+[MIT License](LICENSE) - 自由に使用・改変・再配布できます。
