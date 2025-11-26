@@ -1,0 +1,12 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        - GEMINI_API_KEY=${GEMINI_API_KEY}
+        - VITE_AUTHENTICATION=${VITE_AUTHENTICATION:-false}
+        - VITE_APP_USERNAME=${VITE_APP_USERNAME:-admin}
+        - VITE_APP_PASSWORD=${VITE_APP_PASSWORD:-password123}
+    ports:
+      - "${PORT:-3000}:80"
+    restart: unless-stopped
