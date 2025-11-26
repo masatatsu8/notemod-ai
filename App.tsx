@@ -9,9 +9,13 @@ import { TopBar } from './components/TopBar';
 import { CanvasEditor } from './components/CanvasEditor';
 import { HistorySelector } from './components/HistorySelector';
 import { TitlePageModal, TitlePageData } from './components/TitlePageModal';
+import { LoginPanel } from './components/LoginPanel';
 import { Key, UploadCloud, AlertTriangle, Trash2 } from 'lucide-react';
+import { isAuthenticationRequired, validateCredentials, setAuthToken, isAuthenticated } from './services/authService';
 
 const App: React.FC = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginError, setLoginError] = useState<string | undefined>();
   const [hasApiKey, setHasApiKey] = useState(false);
   const [state, setState] = useState<AppState>({
     pdfName: '',
@@ -35,6 +39,26 @@ const App: React.FC = () => {
   // Modal state for Title Page Creation
   const [isTitlePageModalOpen, setIsTitlePageModalOpen] = useState(false);
 
+
+
+  // --- Authentication Check ---
+  useEffect(() => {
+    if (isAuthenticationRequired()) {
+      setIsLoggedIn(isAuthenticated());
+    } else {
+      setIsLoggedIn(true); // No auth required, auto-login
+    }
+  }, []);
+
+  const handleLogin = (username: string, password: string) => {
+    if (validateCredentials(username, password)) {
+      setAuthToken();
+      setIsLoggedIn(true);
+      setLoginError(undefined);
+    } else {
+      setLoginError('ユーザー名またはパスワードが正しくありません');
+    }
+  };
 
   // --- API Key Check ---
   useEffect(() => {
@@ -563,8 +587,14 @@ const App: React.FC = () => {
       </div>
     );
   }
+  // ========== RENDER ==========
 
-  const currentPage = state.pages[state.activePageIndex];
+  // Show login panel if authentication is required and user is not logged in
+  if (!isLoggedIn) {
+    return <LoginPanel onLogin={handleLogin} error={loginError} />;
+  }
+
+  const activePage = state.pages[state.activePageIndex];
 
   return (
     <div className="flex flex-col h-screen w-full bg-gray-50">
@@ -595,7 +625,7 @@ const App: React.FC = () => {
             />
 
             <main className="flex-1 relative flex flex-col">
-              {currentPage.isGenerating && (
+              {activePage && activePage.isGenerating && (
                 <div className="absolute inset-0 z-50 bg-white/50 backdrop-blur-sm flex flex-col items-center justify-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mb-4"></div>
                   <p className="text-brand-900 font-medium">Generating new version with Nano Banana Pro...</p>
@@ -605,25 +635,22 @@ const App: React.FC = () => {
               <div className="flex-1 relative overflow-hidden">
                 <CanvasEditor
                   key={state.activePageIndex} // Force reset on page change
-                  imageSrc={
-                    currentPage.selectedImageId
-                      ? currentPage.generatedImages.find(g => g.id === currentPage.selectedImageId)?.base64 || currentPage.originalBase64
-                      : currentPage.originalBase64
-                  }
-                  rects={currentPage.rects}
+                  page={activePage}
+                  currentImage={activePage.selectedImageId ? activePage.generatedImages.find(g => g.id === activePage.selectedImageId)?.base64 || activePage.originalBase64 : activePage.originalBase64}
+                  rects={activePage.rects}
                   onAddRect={addRect}
                   onRemoveRect={removeRect}
                   onUpdateRectPrompt={updateRectPrompt}
                   onUpdateRectImage={updateRectImage}
-                  readOnly={!!currentPage.selectedImageId}
+                  readOnly={!!activePage.selectedImageId}
                   isWatermarkMode={isWatermarkMode}
                 />
               </div>
 
               <HistorySelector
-                originalImage={currentPage.originalBase64}
-                generatedImages={currentPage.generatedImages}
-                selectedId={currentPage.selectedImageId}
+                originalImage={activePage.originalBase64}
+                generatedImages={activePage.generatedImages}
+                selectedId={activePage.selectedImageId}
                 onSelect={selectImageVersion}
                 onDelete={setPendingDeletionId}
               />

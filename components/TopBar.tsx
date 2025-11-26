@@ -1,5 +1,6 @@
-import React, { useRef } from 'react';
-import { Upload, Download, Wand2, Loader2, FileUp, Eraser, Archive, Pencil, FilePlus } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Upload, Download, Wand2, Loader2, FileUp, Eraser, Archive, Pencil, FilePlus, LogOut, ChevronDown } from 'lucide-react';
+import { isAuthenticationRequired, clearAuth } from '../services/authService';
 
 interface TopBarProps {
   fileName: string;
@@ -27,6 +28,12 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenTitlePageModal
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const handleLogout = () => {
+    clearAuth();
+    window.location.reload();
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -36,14 +43,41 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   return (
     <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm z-20">
-      <div className="flex items-center gap-3">
-        <div className="bg-brand-500 p-2 rounded-lg text-white">
-          <FileTextIcon />
-        </div>
-        <div>
-          <h1 className="font-bold text-gray-900 text-lg leading-tight">NoteMod AI</h1>
-          <p className="text-xs text-gray-500">{fileName || 'No file selected'}</p>
-        </div>
+      <div className="relative flex items-center gap-3">
+        <button
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="flex items-center gap-3 hover:bg-gray-50 px-2 py-1 rounded-lg transition-colors"
+        >
+          <div className="bg-brand-500 p-2 rounded-lg text-white">
+            <FileTextIcon />
+          </div>
+          <div>
+            <h1 className="font-bold text-gray-900 text-lg leading-tight">NoteMod AI</h1>
+            <p className="text-xs text-gray-500">{fileName || 'No file selected'}</p>
+          </div>
+          {isAuthenticationRequired() && (
+            <ChevronDown size={16} className="text-gray-400" />
+          )}
+        </button>
+
+        {/* Dropdown Menu */}
+        {isMenuOpen && isAuthenticationRequired() && (
+          <>
+            <div
+              className="fixed inset-0 z-10"
+              onClick={() => setIsMenuOpen(false)}
+            />
+            <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                <LogOut size={16} />
+                <span>ログアウト</span>
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="flex items-center gap-3">
