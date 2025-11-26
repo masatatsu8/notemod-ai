@@ -39,6 +39,9 @@ const App: React.FC = () => {
   // Modal state for Title Page Creation
   const [isTitlePageModalOpen, setIsTitlePageModalOpen] = useState(false);
 
+  // API Error state
+  const [apiError, setApiError] = useState<string | null>(null);
+
 
 
   // --- Authentication Check ---
@@ -354,7 +357,8 @@ const App: React.FC = () => {
 
     } catch (err) {
       console.error("Error removing watermark", err);
-      alert("Failed to process watermark removal.");
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      setApiError(`ウォーターマーク削除エラー: ${errorMsg}`);
     } finally {
       setIsProcessing(false);
     }
@@ -474,12 +478,14 @@ const App: React.FC = () => {
 
         } catch (e) {
           console.error(`Error generating page ${idx}`, e);
-          // Check for API key error to prompt user again if needed, 
-          // though the top-level check should catch init issues.
           const errorMsg = e instanceof Error ? e.message : String(e);
+
+          // Check for API key error to prompt user again if needed
           if (errorMsg.includes("403") || errorMsg.includes("PERMISSION_DENIED")) {
-            alert("API Permission Denied. Please ensure you have selected a valid API key with billing enabled.");
-            setHasApiKey(false); // Force re-selection
+            setApiError("APIの権限エラーが発生しました。有効なAPIキーが設定されているか確認してください。");
+            setHasApiKey(false);
+          } else {
+            setApiError(`画像生成エラー: ${errorMsg}`);
           }
 
           setState(prev => {
@@ -491,6 +497,8 @@ const App: React.FC = () => {
       }
     } catch (e) {
       console.error("Processing error", e);
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      setApiError(`処理エラー: ${errorMsg}`);
     } finally {
       setIsProcessing(false);
     }
@@ -550,7 +558,8 @@ const App: React.FC = () => {
 
     } catch (err) {
       console.error("Failed to create title page", err);
-      alert("Failed to create title page. Please try again.");
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      setApiError(`タイトルページ生成エラー: ${errorMsg}`);
     } finally {
       setIsProcessing(false);
     }
@@ -805,6 +814,33 @@ const App: React.FC = () => {
         isGenerating={isProcessing}
         totalPages={state.pages.length}
       />
+
+      {/* API Error Modal */}
+      {apiError && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl p-6 shadow-2xl max-w-md w-full mx-4 border border-gray-100 transform scale-100 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-red-100 p-2 rounded-full text-red-600">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">エラーが発生しました</h3>
+            </div>
+
+            <p className="text-gray-600 mb-6 leading-relaxed text-sm break-all">
+              {apiError}
+            </p>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => setApiError(null)}
+                className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 font-medium shadow-md transition-all hover:shadow-lg"
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="fixed bottom-0 right-0 p-2 text-xs text-gray-400 z-50">
