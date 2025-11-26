@@ -1,0 +1,5 @@
+{
+  "name": "NoteMod AI",
+  "description": "A PDF editor powered by Nano Banana Pro. Upload NotebookLM PDFs, select regions, and use GenAI to modify content seamlessly.",
+  "requestFramePermissions": []
+}
