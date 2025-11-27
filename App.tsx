@@ -20,7 +20,9 @@ const App: React.FC = () => {
   const [state, setState] = useState<AppState>({
     pdfName: '',
     pages: [],
-    activePageIndex: 0
+    activePageIndex: 0,
+    imageResolution: '1k',
+    enhanceText: false
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -96,11 +98,21 @@ const App: React.FC = () => {
         setState({
           pdfName: '',
           pages: [],
-          activePageIndex: 0
+          activePageIndex: 0,
+          imageResolution: '1k',
+          enhanceText: false
         });
         setIsWatermarkMode(false);
       }
     }
+  };
+
+  const handleResolutionChange = (resolution: '1k' | '2k') => {
+    setState(prev => ({ ...prev, imageResolution: resolution }));
+  };
+
+  const handleEnhanceTextChange = (enabled: boolean) => {
+    setState(prev => ({ ...prev, enhanceText: enabled }));
   };
 
   const handleFileUpload = async (file: File) => {
@@ -116,7 +128,9 @@ const App: React.FC = () => {
         setState({
           pdfName: file.name,
           pages,
-          activePageIndex: 0
+          activePageIndex: 0,
+          imageResolution: '1k',
+          enhanceText: false
         });
       } else {
         alert("Unsupported file type. Please upload a PDF or .nmw file.");
@@ -435,12 +449,12 @@ const App: React.FC = () => {
     const idx = state.activePageIndex;
     const page = state.pages[idx];
 
-    // Check if the current page has valid prompts
-    // We filter rects to make sure we're not just sending empty ones
+    // Check if the current page has valid prompts OR if text enhancement is enabled
     const hasValidPrompts = page.rects.length > 0 && page.rects.some(r => r.prompt.trim() !== '');
+    const hasTextEnhancement = state.enhanceText && page.rects.length > 0;
 
-    if (!hasValidPrompts) {
-      alert("現在のページで修正する領域を選択し、指示を入力してください。");
+    if (!hasValidPrompts && !hasTextEnhancement) {
+      alert("現在のページで修正する領域を選択し、指示を入力するか、文字くっきりオプションを有効にしてください。");
       return;
     }
 
@@ -454,12 +468,15 @@ const App: React.FC = () => {
         // Mark generating
         setState(prev => {
           const ps = [...prev.pages];
-          ps[idx].isGenerating = true;
+          ps[idx] = {
+            ...ps[idx],
+            isGenerating: true
+          };
           return { ...prev, pages: ps };
         });
 
         try {
-          const newImageBase64 = await generateModifiedPage(page);
+          const newImageBase64 = await generateModifiedPage(page, state.imageResolution, state.enhanceText);
 
           const newGenImage: GeneratedImage = {
             id: crypto.randomUUID(),
@@ -470,9 +487,12 @@ const App: React.FC = () => {
 
           setState(prev => {
             const ps = [...prev.pages];
-            ps[idx].isGenerating = false;
-            ps[idx].generatedImages.unshift(newGenImage); // Add to start
-            ps[idx].selectedImageId = newGenImage.id; // Auto select new one
+            ps[idx] = {
+              ...ps[idx],
+              isGenerating: false,
+              generatedImages: [newGenImage, ...ps[idx].generatedImages],
+              selectedImageId: newGenImage.id
+            };
             return { ...prev, pages: ps };
           });
 
@@ -490,7 +510,10 @@ const App: React.FC = () => {
 
           setState(prev => {
             const ps = [...prev.pages];
-            ps[idx].isGenerating = false;
+            ps[idx] = {
+              ...ps[idx],
+              isGenerating: false
+            };
             return { ...prev, pages: ps };
           });
         }
@@ -521,7 +544,7 @@ const App: React.FC = () => {
         referenceImages.push(currentImage);
       }
 
-      const base64Image = await generateTitlePage(data, referenceImages, data.additionalInstructions);
+      const base64Image = await generateTitlePage(data, referenceImages, data.additionalInstructions, state.imageResolution, state.enhanceText);
 
       // Create new page
       // Use dimensions from the first page if available, otherwise default to A4 (2x scale)
@@ -618,6 +641,8 @@ const App: React.FC = () => {
         isWatermarkMode={isWatermarkMode}
         onToggleWatermarkMode={() => setIsWatermarkMode(!isWatermarkMode)}
         onOpenTitlePageModal={() => setIsTitlePageModalOpen(true)}
+        imageResolution={state.imageResolution}
+        onResolutionChange={handleResolutionChange}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -653,6 +678,8 @@ const App: React.FC = () => {
                   onUpdateRectImage={updateRectImage}
                   readOnly={false}
                   isWatermarkMode={isWatermarkMode}
+                  enhanceText={state.enhanceText}
+                  onEnhanceTextChange={handleEnhanceTextChange}
                 />
               </div>
 

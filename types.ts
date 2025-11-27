@@ -20,14 +20,14 @@ export interface PDFPage {
   originalBase64: string; // The original rasterized page
   width: number;
   height: number;
-  
+
   // State for edits
   rects: Rect[];
-  
+
   // History
   generatedImages: GeneratedImage[];
   selectedImageId: string | null; // null means original
-  
+
   // UI State
   isGenerating: boolean;
 }
@@ -36,4 +36,6 @@ export interface AppState {
   pdfName: string;
   pages: PDFPage[];
   activePageIndex: number;
+  imageResolution: '1k' | '2k';
+  enhanceText: boolean;
 }

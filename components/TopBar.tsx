@@ -14,6 +14,8 @@ interface TopBarProps {
   onToggleWatermarkMode: () => void;
   onReset: () => void;
   onOpenTitlePageModal: () => void;
+  imageResolution: '1k' | '2k';
+  onResolutionChange: (resolution: '1k' | '2k') => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -26,7 +28,9 @@ export const TopBar: React.FC<TopBarProps> = ({
   isWatermarkMode,
   onToggleWatermarkMode,
   onReset,
-  onOpenTitlePageModal
+  onOpenTitlePageModal,
+  imageResolution,
+  onResolutionChange
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -175,6 +179,24 @@ export const TopBar: React.FC<TopBarProps> = ({
             </button>
 
             <div className="h-6 w-px bg-gray-300 mx-1"></div>
+
+            {/* Resolution Selector */}
+            <div className="flex bg-gray-100 p-1 rounded-lg border border-gray-200 mr-2">
+              <button
+                onClick={() => onResolutionChange('1k')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${imageResolution === '1k' ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                title="1k解像度（1024px、高速）"
+              >
+                1k
+              </button>
+              <button
+                onClick={() => onResolutionChange('2k')}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${imageResolution === '2k' ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
+                title="2k解像度（2048px、高品質）"
+              >
+                2k
+              </button>
+            </div>
 
             <button
               onClick={onModifyPage}

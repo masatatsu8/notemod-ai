@@ -9,15 +9,21 @@ const cleanBase64 = (dataUrl: string) => {
   return dataUrl;
 };
 
-export const generateModifiedPage = async (page: PDFPage): Promise<string> => {
+export const generateModifiedPage = async (page: PDFPage, resolution: '1k' | '2k' = '1k', enhanceText: boolean = false): Promise<string> => {
   if (!process.env.API_KEY) {
     throw new Error("API Key is missing");
   }
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+  const targetSize = resolution === '2k' ? 2048 : 1024;
+
   // Construct a prompt based on all rectangles
-  let promptText = "Edit this document page image. Maintain the original layout and style as much as possible. ";
+  let promptText = `Edit this document page image. Maintain the original layout and style as much as possible. Output resolution should be approximately ${targetSize}px on the longer side. `;
+
+  if (enhanceText) {
+    promptText += '画像の内容を読み取り、その内容を改めて明瞭かつ適切に描画してください。内容の変更はおこなわないこと！';
+  }
 
   // The first part is the prompt
   // The second part is the Main Image (PDF Page)
@@ -110,13 +116,18 @@ export const generateTitlePage = async (
     name: string;
   },
   referenceImages: string[] = [],
-  additionalInstructions?: string
+  additionalInstructions?: string,
+  resolution: '1k' | '2k' = '1k',
+  enhanceText: boolean = false
 ): Promise<string> => {
   if (!process.env.API_KEY) {
     throw new Error("API Key is missing");
   }
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+  const targetSize = resolution === '2k' ? 2048 : 1024;
+  const textEnhancement = enhanceText ? '\n文字を明瞭に正しくはっきりと描写してください。' : '';
 
   const prompt = referenceImages.length > 0
     ? `
@@ -127,6 +138,7 @@ export const generateTitlePage = async (
     ${additionalInstructions ? `\n\nAdditional Instructions:\n${additionalInstructions}` : ''}
     
     Match the visual style, layout, typography, colors, and overall aesthetic of the reference images as closely as possible.
+    Output resolution should be approximately ${targetSize}px on the longer side.${textEnhancement}
     Output the full image of the title page.
   `
     : `
@@ -137,6 +149,7 @@ export const generateTitlePage = async (
     ${additionalInstructions ? `\n\nAdditional Instructions:\n${additionalInstructions}` : ''}
     
     Format: Landscape A4 (横向き)
+    Output resolution should be approximately ${targetSize}px on the longer side.${textEnhancement}
     Output the full image of the title page.
   `;
 

@@ -11,35 +11,39 @@ interface CanvasEditorProps {
   onUpdateRectImage?: (id: string, base64Image: string) => void;
   readOnly: boolean; // True if viewing a generated image
   isWatermarkMode: boolean;
+  enhanceText: boolean;
+  onEnhanceTextChange: (enabled: boolean) => void;
 }
 
 export const CanvasEditor: React.FC<CanvasEditorProps> = ({
   currentImage,
-  rects, 
-  onAddRect, 
-  onRemoveRect, 
+  rects,
+  onAddRect,
+  onRemoveRect,
   onUpdateRectPrompt,
   onUpdateRectImage,
   readOnly,
-  isWatermarkMode
+  isWatermarkMode,
+  enhanceText,
+  onEnhanceTextChange
 }) => {
   // Use a ref for the wrapper that matches the image dimensions exactly
   const imageWrapperRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [isDrawing, setIsDrawing] = useState(false);
-  const [startPos, setStartPos] = useState<{x: number, y: number} | null>(null);
-  const [currentRect, setCurrentRect] = useState<{x: number, y: number, w: number, h: number} | null>(null);
+  const [startPos, setStartPos] = useState<{ x: number, y: number } | null>(null);
+  const [currentRect, setCurrentRect] = useState<{ x: number, y: number, w: number, h: number } | null>(null);
   const [selectedRectId, setSelectedRectId] = useState<string | null>(null);
 
   const getRelativeCoords = (e: PointerEvent) => {
     if (!imageWrapperRef.current) return { x: 0, y: 0 };
     const rect = imageWrapperRef.current.getBoundingClientRect();
-    
+
     // Calculate relative to the image wrapper
     let x = ((e.clientX - rect.left) / rect.width) * 100;
     let y = ((e.clientY - rect.top) / rect.height) * 100;
-    
+
     // Clamp values to 0-100%
     x = Math.max(0, Math.min(100, x));
     y = Math.max(0, Math.min(100, y));
@@ -49,21 +53,21 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
 
   const handlePointerDown = (e: PointerEvent) => {
     console.log("Pointer Down: Mode=", isWatermarkMode ? "Watermark" : "Standard", "ReadOnly=", readOnly);
-    
+
     // Allow drawing if in watermark mode, regardless of readOnly status
     if (readOnly && !isWatermarkMode) {
-        console.log("Skipping pointer down: ReadOnly mode active");
-        return;
+      console.log("Skipping pointer down: ReadOnly mode active");
+      return;
     }
-    
+
     // Don't start drawing if clicking on an input or delete button
     if ((e.target as HTMLElement).closest('.rect-control')) return;
 
     // Capture the pointer to track movement even outside the element
     try {
-        (e.currentTarget as Element).setPointerCapture(e.pointerId);
+      (e.currentTarget as Element).setPointerCapture(e.pointerId);
     } catch (err) {
-        console.warn("SetPointerCapture failed:", err);
+      console.warn("SetPointerCapture failed:", err);
     }
 
     const coords = getRelativeCoords(e);
@@ -74,7 +78,7 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
 
   const handlePointerMove = (e: PointerEvent) => {
     if (!isDrawing || !startPos) return;
-    
+
     const coords = getRelativeCoords(e);
     const w = Math.abs(coords.x - startPos.x);
     const h = Math.abs(coords.y - startPos.y);
@@ -90,9 +94,9 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
 
     // Release capture
     try {
-        (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+      (e.currentTarget as Element).releasePointerCapture(e.pointerId);
     } catch (err) {
-        console.warn("ReleasePointerCapture failed:", err);
+      console.warn("ReleasePointerCapture failed:", err);
     }
 
     if (!startPos || !currentRect) {
@@ -110,16 +114,16 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
         ...currentRect,
         prompt: ''
       };
-      
+
       console.log("Dispatching new rect to App");
       onAddRect(newRect);
 
       // Only select it if we are NOT in watermark mode (watermark mode is immediate action)
       if (!isWatermarkMode) {
-          setSelectedRectId(newRect.id);
+        setSelectedRectId(newRect.id);
       }
     } else {
-        console.log("Selection too small, ignored");
+      console.log("Selection too small, ignored");
     }
 
     cleanupDrawing();
@@ -132,25 +136,25 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, rectId: string) => {
-      if (e.target.files && e.target.files[0] && onUpdateRectImage) {
-          const file = e.target.files[0];
-          const reader = new FileReader();
-          reader.onload = (event) => {
-              if (event.target?.result) {
-                  onUpdateRectImage(rectId, event.target.result as string);
-              }
-          };
-          reader.readAsDataURL(file);
-      }
-      // Reset input
-      if (fileInputRef.current) fileInputRef.current.value = '';
+    if (e.target.files && e.target.files[0] && onUpdateRectImage) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          onUpdateRectImage(rectId, event.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
     <div className={`relative w-full h-full flex items-center justify-center bg-gray-100 overflow-auto p-4 ${isWatermarkMode ? 'cursor-crosshair' : ''}`}>
-       
-       {/* Instruction Banner */}
-       {isWatermarkMode && (
+
+      {/* Instruction Banner */}
+      {isWatermarkMode && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-30 bg-red-600 text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium animate-pulse pointer-events-none">
           消去したいエリアを選択してください（マウスを離すと実行されます）
         </div>
@@ -161,16 +165,16 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
         inline-block ensures the div shrinks to fit the image width exactly.
         relative allows absolute positioning of rects within the image context.
       */}
-      <div 
+      <div
         ref={imageWrapperRef}
-        className="relative inline-block shadow-lg touch-none" 
+        className="relative inline-block shadow-lg touch-none"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
         <img
           src={currentImage}
-          alt="Page Content" 
+          alt="Page Content"
           className="block max-h-[85vh] max-w-full h-auto w-auto object-contain select-none"
           draggable={false}
         />
@@ -194,85 +198,101 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
               setSelectedRectId(rect.id);
             }}
           >
-             {/* Prompt Input Box */}
-             {selectedRectId === rect.id && (
-                <div className="rect-control absolute left-0 -top-14 bg-white rounded shadow-lg p-2 min-w-[280px] flex gap-2 z-20 cursor-default" onPointerDown={(e) => e.stopPropagation()}>
-                   <div className="bg-brand-100 p-1.5 rounded text-brand-700 h-fit mt-0.5">
-                      <MessageSquarePlus size={14} />
-                   </div>
-                   
-                   <div className="flex-1 flex flex-col gap-2">
-                       <input 
-                          autoFocus
-                          type="text" 
-                          placeholder="修正内容を入力..."
-                          className="text-sm border-none outline-none w-full bg-transparent"
-                          value={rect.prompt}
-                          onChange={(e) => onUpdateRectPrompt(rect.id, e.target.value)}
-                          onKeyDown={(e) => e.stopPropagation()}
-                       />
-                       
-                       {/* Reference Image UI */}
-                       {onUpdateRectImage && (
-                           <div className="flex items-center gap-2">
-                               {rect.referenceImage ? (
-                                   <div className="relative group/thumb">
-                                        <img 
-                                            src={rect.referenceImage} 
-                                            alt="Ref" 
-                                            className="w-8 h-8 object-cover rounded border border-gray-200"
-                                        />
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onUpdateRectImage(rect.id, ""); // Clear image
-                                            }}
-                                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover/thumb:opacity-100 transition-opacity"
-                                            title="画像を削除"
-                                        >
-                                            <X size={8} />
-                                        </button>
-                                   </div>
-                               ) : (
-                                   <button
-                                      onClick={(e) => {
-                                          e.stopPropagation();
-                                          fileInputRef.current?.click();
-                                      }}
-                                      className="flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-2 py-1 rounded transition-colors"
-                                      title="参照画像を追加"
-                                   >
-                                       <ImagePlus size={12} />
-                                       <span>画像を追加</span>
-                                   </button>
-                               )}
-                               
-                               {/* Hidden file input - shared for all rects, activated by click */}
-                               <input 
-                                   type="file" 
-                                   ref={fileInputRef} 
-                                   className="hidden" 
-                                   accept="image/*"
-                                   onChange={(e) => handleImageUpload(e, rect.id)}
-                               />
-                           </div>
-                       )}
-                   </div>
+            {/* Prompt Input Box */}
+            {selectedRectId === rect.id && (
+              <div className="rect-control absolute left-0 -top-14 bg-white rounded shadow-lg p-2 min-w-[280px] flex gap-2 z-20 cursor-default" onPointerDown={(e) => e.stopPropagation()}>
+                <div className="bg-brand-100 p-1.5 rounded text-brand-700 h-fit mt-0.5">
+                  <MessageSquarePlus size={14} />
+                </div>
 
-                   <div className="h-full border-l border-gray-200 pl-2 ml-1">
-                       <button 
+                <div className="flex-1 flex flex-col gap-2">
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="修正内容を入力..."
+                    className="text-sm border-none outline-none w-full bg-transparent"
+                    value={rect.prompt}
+                    onChange={(e) => onUpdateRectPrompt(rect.id, e.target.value)}
+                    onKeyDown={(e) => e.stopPropagation()}
+                  />
+
+                  {/* Reference Image UI */}
+                  {onUpdateRectImage && (
+                    <div className="flex items-center gap-2">
+                      {rect.referenceImage ? (
+                        <div className="relative group/thumb">
+                          <img
+                            src={rect.referenceImage}
+                            alt="Ref"
+                            className="w-8 h-8 object-cover rounded border border-gray-200"
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onUpdateRectImage(rect.id, ""); // Clear image
+                            }}
+                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover/thumb:opacity-100 transition-opacity"
+                            title="画像を削除"
+                          >
+                            <X size={8} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onRemoveRect(rect.id);
+                            fileInputRef.current?.click();
                           }}
-                          className="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50"
-                          title="領域を削除"
-                       >
-                         <Trash2 size={16} />
-                       </button>
-                   </div>
+                          className="flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-2 py-1 rounded transition-colors"
+                          title="参照画像を追加"
+                        >
+                          <ImagePlus size={12} />
+                          <span>画像を追加</span>
+                        </button>
+                      )}
+
+                      {/* Hidden file input - shared for all rects, activated by click */}
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, rect.id)}
+                      />
+                    </div>
+                  )}
                 </div>
-             )}
+
+                {/* Text Enhancement Toggle */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEnhanceTextChange(!enhanceText);
+                  }}
+                  className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all border ${enhanceText
+                      ? 'bg-brand-50 text-brand-700 border-brand-200'
+                      : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                    }`}
+                  title="文字を明瞭に描写"
+                >
+                  <span className="text-sm">✨</span>
+                  <span>文字くっきり</span>
+                </button>
+
+                <div className="h-full border-l border-gray-200 pl-2 ml-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemoveRect(rect.id);
+                    }}
+                    className="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50"
+                    title="領域を削除"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
 
@@ -285,19 +305,18 @@ export const CanvasEditor: React.FC<CanvasEditorProps> = ({
               width: `${currentRect.w}%`,
               height: `${currentRect.h}%`
             }}
-            className={`absolute border-2 pointer-events-none ${
-                isWatermarkMode 
-                ? 'border-red-500 bg-red-500/20' 
-                : 'border-brand-500 bg-brand-500/20'
-            }`}
+            className={`absolute border-2 pointer-events-none ${isWatermarkMode
+              ? 'border-red-500 bg-red-500/20'
+              : 'border-brand-500 bg-brand-500/20'
+              }`}
           />
         )}
       </div>
 
       {readOnly && !isWatermarkMode && (
-          <div className="fixed bottom-36 bg-gray-900/80 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm pointer-events-none animate-flicker">
-             プレビューモード（生成済み画像）
-          </div>
+        <div className="fixed bottom-36 bg-gray-900/80 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm pointer-events-none animate-flicker">
+          プレビューモード（生成済み画像）
+        </div>
       )}
     </div>
   );
